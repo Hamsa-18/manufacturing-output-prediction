@@ -7,57 +7,93 @@ Original file is located at
     https://colab.research.google.com/drive/11bUGu3eTAlKW9HwFTOpl0iL78CTWVdBC
 """
 
-# Commented out IPython magic to ensure Python compatibility.
-# %pip install streamlit
-
 import streamlit as st
-import numpy as np
 import pandas as pd
-import joblib
-import os
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LinearRegression
 
-st.title("🏭 Manufacturing Equipment Output Prediction")
+# Set page configuration
+st.set_page_config(page_title="Manufacturing Output Predictor", layout="wide")
 
-MODEL_PATH = "linear_regression_model.pkl"
-SCALER_PATH = "scaler.pkl"
+# Custom CSS for better styling
+st.markdown("""
+    <style>
+    .main-header {color: #2c3e50; text-align: center;}
+    .stButton>button {width: 100%; background-color: #3498db; color: white;}
+    .stButton>button:hover {background-color: #2980b9;}
+    .stNumberInput, .stSelectbox {margin-bottom: 1rem;}
+    </style>
+""", unsafe_allow_html=True)
 
-if not (os.path.exists(MODEL_PATH) and os.path.exists(SCALER_PATH)):
-    st.warning("⚙️ Model or scaler not found. Retraining now...")
+# App title and description
+st.markdown("<h1 class='main-header'>Manufacturing Output Prediction System</h1>", unsafe_allow_html=True)
+st.markdown("""
+    <div style='text-align: center; margin-bottom: 2rem; color: #7f8c8d;'>
+        Predict hourly manufacturing output based on equipment and process parameters
+    </div>
+""", unsafe_allow_html=True)
 
-    df = pd.read_csv("manufacturing_dataset_1000_samples.csv")
-    FEATURES = ['Machine_Speed', 'Temperature', 'Pressure', 'Cycle_Time']
-    TARGET = 'Parts_Per_Hour'
+# Create two columns for better layout
+col1, col2 = st.columns(2)
 
-    X = df[FEATURES]
-    y = df[TARGET]
+with col1:
+    st.header("Process Parameters")
 
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
+    # Process parameters - numerical inputs
+    injection_temp = st.number_input("Injection Temperature (°C)", min_value=0.0, max_value=300.0, value=180.0, step=1.0)
+    injection_pressure = st.number_input("Injection Pressure (bar)", min_value=0.0, max_value=2000.0, value=800.0, step=10.0)
+    cycle_time = st.number_input("Cycle Time (seconds)", min_value=0.0, value=45.0, step=0.5)
+    cooling_time = st.number_input("Cooling Time (seconds)", min_value=0.0, value=20.0, step=0.5)
+    material_viscosity = st.number_input("Material Viscosity (Pa·s)", min_value=0.0, value=1500.0, step=10.0)
 
-    model = LinearRegression()
-    model.fit(X_scaled, y)
+    # Machine parameters
+    st.header("Machine Parameters")
+    ambient_temp = st.number_input("Ambient Temperature (°C)", min_value=0.0, max_value=50.0, value=25.0, step=0.5)
+    machine_age = st.number_input("Machine Age (years)", min_value=0, max_value=30, value=5, step=1)
+    operator_exp = st.number_input("Operator Experience (years)", min_value=0, max_value=40, value=5, step=1)
+    maintenance_hours = st.number_input("Maintenance Hours (last month)", min_value=0, value=8, step=1)
 
-    joblib.dump(model, MODEL_PATH)
-    joblib.dump(scaler, SCALER_PATH)
-    st.success("✅ Model retrained and saved!")
+with col2:
+    # Categorical parameters
+    st.header("Shift Information")
+    shift = st.radio("Shift", ["Morning", "Evening", "Night"])
 
-model = joblib.load(MODEL_PATH)
-scaler = joblib.load(SCALER_PATH)
+    st.header("Machine Type")
+    machine_type = st.selectbox("Select Machine Type", ["Type A", "Type B", "Type C"])
 
-st.subheader("🔧 Input Parameters")
-machine_speed = st.number_input("Machine Speed (rpm)", min_value=0.0)
-temperature = st.number_input("Temperature (°C)", min_value=0.0)
-pressure = st.number_input("Pressure (bar)", min_value=0.0)
-cycle_time = st.number_input("Cycle Time (sec)", min_value=0.0)
+    st.header("Material Grade")
+    material_grade = st.radio("Material Grade", ["Standard", "Premium"])
 
-if st.button("🔍 Predict Output"):
-    input_data = np.array([[machine_speed, temperature, pressure, cycle_time]])
-    input_scaled = scaler.transform(input_data)
-    prediction = model.predict(input_scaled)[0]
-    st.success(f"✅ Predicted Parts per Hour: **{prediction:.2f}**")
+    st.header("Day of Week")
+    day_of_week = st.selectbox("Select Day",
+                             ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
 
-import os
-st.write("📂 Files in current folder:", os.listdir("."))
+# Calculate button
+if st.button("Predict Output", type="primary"):
+    # This is where the prediction logic would go
+    st.success("Prediction functionality will be implemented here")
+
+    # Placeholder for prediction results
+    with st.expander("View Prediction Details"):
+        st.write("### Input Parameters")
+        st.json({
+            "Injection Temperature": f"{injection_temp} °C",
+            "Injection Pressure": f"{injection_pressure} bar",
+            "Cycle Time": f"{cycle_time} seconds",
+            "Shift": shift,
+            "Machine Type": machine_type,
+            "Material Grade": material_grade
+        })
+
+    # Placeholder for visualization
+    st.subheader("Production Forecast")
+    st.line_chart(pd.DataFrame({
+        'Hour': range(1, 25),
+        'Predicted Output': [100 * (0.8 + 0.4 * (i/24) * (1 + 0.1 * (injection_temp-180)/50)) for i in range(24)]
+    }).set_index('Hour'))
+
+# Add some additional information
+st.markdown("---")
+st.markdown("""
+    *Note:* This is a frontend-only demonstration. To enable actual predictions,
+    please implement the model loading and prediction logic in the backend.
+""")
 
